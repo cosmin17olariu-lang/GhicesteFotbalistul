@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ghiceste Fotbalistul</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green:#1a5c1a; --green-mid:#2d6a2d; --green-light:#e8f5e8;
+  --green-bright:#3a8a3a; --red:#c0392b; --red-light:#fdecea;
+  --gold:#c9a227; --dark:#1a1a1a; --mid:#444; --muted:#888;
+  --border:#ddd; --bg:#f7f7f5;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--dark);min-height:100vh;font-size:16px;line-height:1.5}
+header{background:var(--green);color:white;padding:0;position:relative;overflow:hidden}
+header::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(255,255,255,.1) 0,rgba(255,255,255,.1) 1px,transparent 1px,transparent 60px),repeating-linear-gradient(180deg,rgba(255,255,255,.1) 0,rgba(255,255,255,.1) 1px,transparent 1px,transparent 60px);pointer-events:none}
+.header-inner{position:relative;z-index:1;max-width:540px;margin:0 auto;padding:20px 20px 18px}
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.game-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(26px,7vw,40px);letter-spacing:1px;line-height:1;display:flex;align-items:center;gap:8px}
+.game-title .ball{animation:spinball 4s linear infinite;display:inline-block}
+@keyframes spinball{to{transform:rotate(360deg)}}
+.game-subtitle{font-size:11px;text-transform:uppercase;letter-spacing:3px;opacity:.7;margin-top:2px}
+.header-meta{text-align:right;flex-shrink:0}
+.streak-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:5px 12px;font-size:14px;font-weight:600}
+.date-label{font-size:11px;opacity:.6;margin-top:5px;text-transform:uppercase;letter-spacing:1px}
+.puzzle-num-label{font-size:11px;opacity:.5;margin-top:2px;letter-spacing:1px}
+.container{max-width:540px;margin:0 auto;padding:20px 16px 48px}
+#already-played{display:none;background:white;border-radius:16px;padding:28px 24px;border:2px solid var(--green-light);box-shadow:0 2px 20px rgba(0,0,0,.06);text-align:center}
+#already-played h2{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;color:var(--green);margin-bottom:8px}
+.result-emojis-big{font-size:28px;letter-spacing:4px;margin:16px 0}
+#already-played p{color:var(--mid);font-size:15px;margin-bottom:12px}
+.section-label{font-size:11px;text-transform:uppercase;letter-spacing:3px;color:var(--muted);margin-bottom:12px;font-weight:600}
+.clue-card{background:white;border-radius:12px;padding:14px 18px;margin-bottom:10px;border:1.5px solid var(--border);display:flex;gap:14px;align-items:flex-start;animation:slideIn .35s cubic-bezier(.34,1.56,.64,1);box-shadow:0 1px 8px rgba(0,0,0,.04)}
+@keyframes slideIn{from{opacity:0;transform:translateY(-10px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.clue-num{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--green-mid);line-height:1;min-width:24px;margin-top:1px}
+.clue-text{font-size:15px;color:var(--dark);line-height:1.55}
+#input-area{margin-top:20px}
+#guess-input{width:100%;padding:15px 18px;font-size:17px;font-family:'DM Sans',sans-serif;border:2px solid var(--border);border-radius:12px;outline:none;background:white;color:var(--dark);transition:border-color .2s;-webkit-appearance:none;margin-bottom:10px}
+#guess-input:focus{border-color:var(--green-mid);box-shadow:0 0 0 3px rgba(45,106,45,.12)}
+#guess-btn{width:100%;padding:15px 18px;background:var(--green);color:white;font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;border:none;border-radius:12px;cursor:pointer;transition:background .15s,transform .1s;-webkit-tap-highlight-color:transparent}
+#guess-btn:hover{background:var(--green-bright)}
+#guess-btn:active{transform:scale(.98)}
+#feedback{margin-top:14px;padding:13px 18px;border-radius:12px;font-size:15px;font-weight:500;text-align:center;display:none;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+#feedback.wrong{background:var(--red-light);color:var(--red);border:1.5px solid #f5c6c2;display:block}
+#feedback.correct{background:var(--green-light);color:var(--green);border:1.5px solid #b6ddb6;display:block}
+#progress-dots{display:flex;gap:6px;justify-content:center;margin:18px 0 0}
+.dot{width:32px;height:8px;border-radius:4px;background:#e0e0e0;transition:background .3s}
+.dot.wrong{background:var(--red)}
+.dot.correct{background:var(--green-mid)}
+.dot.current{background:var(--gold);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+#game-over{display:none;background:white;border-radius:16px;padding:28px 24px;margin-top:20px;border:2px solid var(--border);box-shadow:0 2px 20px rgba(0,0,0,.06)}
+#game-over.won{border-color:var(--green-light)}
+#game-over.lost{border-color:#fdd}
+.game-over-title{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:1px;margin-bottom:6px}
+.won-text{color:var(--green)}
+.lost-text{color:var(--red)}
+.answer-reveal{font-size:15px;color:var(--mid);margin-bottom:14px;line-height:1.5}
+.answer-name{font-weight:700;color:var(--dark);font-size:17px}
+.result-emojis{font-size:24px;letter-spacing:3px;margin-bottom:16px}
+.copy-btn{width:100%;padding:14px 18px;background:white;color:var(--green);font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;border:2px solid var(--green);border-radius:12px;cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent;margin-top:4px}
+.copy-btn:hover{background:var(--green);color:white}
+.copy-btn.copied{background:var(--green);color:white}
+#flash{position:fixed;inset:0;pointer-events:none;z-index:999;opacity:0;transition:opacity .15s}
+#flash.wrong-flash{background:rgba(192,57,43,.18)}
+#flash.correct-flash{background:rgba(45,106,45,.18)}
+#flash.active{opacity:1}
+.confetti-piece{position:fixed;width:10px;height:10px;top:-10px;border-radius:2px;animation:confettiFall linear forwards;pointer-events:none;z-index:1000}
+@keyframes confettiFall{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+.next-hint{font-size:13px;color:var(--muted);text-align:center;margin-top:14px}
+.countdown{font-weight:700;color:var(--green-mid)}
+</style>
+</head>
+<body>
+<div id="flash"></div>
+<header>
+  <div class="header-inner">
+    <div class="header-top">
+      <div>
+        <div class="game-title"><span class="ball">&#x26BD;</span><span>Ghiceste Fotbalistul</span></div>
+        <div class="game-subtitle">GhicescFotbalistul.ro</div>
+      </div>
+      <div class="header-meta">
+        <div class="streak-badge">&#x1F525; Streak: <span id="streak-val">0</span> zile</div>
+        <div class="date-label" id="date-label"></div>
+        <div class="puzzle-num-label" id="puzzle-num-label"></div>
+      </div>
+    </div>
+  </div>
+</header>
+<div class="container">
+  <div id="already-played">
+    <h2>Ai jucat azi! &#x1F3AF;</h2>
+    <p>Revino maine pentru un nou puzzle.</p>
+    <div class="result-emojis-big" id="ap-emojis"></div>
+    <p id="ap-summary"></p>
+    <button class="copy-btn" id="copy-btn-ap">&#x1F4CB; COPIAZA REZULTATUL</button>
+    <p class="next-hint">Urmatorul puzzle in <span class="countdown" id="countdown">--:--:--</span></p>
+  </div>
+  <div id="game-area">
+    <div class="section-label">Indicii</div>
+    <div id="clues-container"></div>
+    <div id="progress-dots"></div>
+    <div id="input-area">
+      <input type="text" id="guess-input" placeholder="Scrie numele fotbalistului..." autocomplete="off" autocorrect="off" spellcheck="false">
+      <button id="guess-btn">&#x26BD; GHICESTE</button>
+    </div>
+    <div id="feedback"></div>
+    <div id="game-over">
+      <div class="game-over-title" id="go-title"></div>
+      <div class="answer-reveal" id="go-body"></div>
+      <div class="result-emojis" id="go-emojis"></div>
+      <button class="copy-btn" id="copy-btn">&#x1F4CB; COPIAZA REZULTATUL</button>
+      <p class="next-hint">Urmatorul puzzle in <span class="countdown" id="countdown2">--:--:--</span></p>
+    </div>
+  </div>
+</div>
+<script>
+// ── DATA ──
+var jucatori = [
+  {id:1, raspuns:"Gheorghe Hagi", indicii:["A evoluat ca mijlocas ofensiv in anii '80-'90.","A jucat in principal in Romania, Spania si Turcia, in ligi de top europene.","Este considerat cel mai bun fotbalist roman din toate timpurile si unul dintre cei mai buni mijlocasi ofensivi ai epocii sale.","A fost lider la Steaua Bucuresti, dar si jucator important la Real Madrid, Brescia, Barcelona si Galatasaray.","A stralucit la Cupa Mondiala 1994, cu goluri spectaculoase pentru nationala Romaniei.","Este supranumit Regele, iar la Galatasaray si in Romania numele sau este aproape sinonim cu fotbalul anilor '90."]},
+  {id:2, raspuns:"Adrian Mutu", indicii:["Atacant si second striker care a evoluat la nivel inalt in anii 2000.","A jucat in principal in Serie A, dar si in Premier League si Ligue 1.","Este golgheter all-time al nationalei Romaniei, la egalitate cu Gheorghe Hagi, cu 35 de goluri.","A avut perioade remarcabile la Parma si Fiorentina, cu sezoane de peste 15 goluri marcate.","A fost una dintre vedetele Romaniei la Euro 2008, marcand contra Italiei.","Este cunoscut atat pentru talentul extraordinar, cat si pentru scandalurile de dopaj si disciplina din cariera."]},
+  {id:3, raspuns:"Gheorghe Popescu", indicii:["Fundas central si mijlocas defensiv de top din anii '90.","A evoluat in principalele ligi europene, inclusiv La Liga, Super Lig si Eredivisie.","A fost capitan al nationalei Romaniei si a strans peste 100 de selectii.","A jucat la cluburi importante precum PSV Eindhoven, Tottenham Hotspur, Barcelona si Galatasaray.","A castigat Cupa UEFA cu Galatasaray in 2000, ridicand trofeul ca lider al echipei.","La Barcelona a purtat banderola de capitan, fiind unul dintre putinii romani capitani la un club de top mondial."]},
+  {id:4, raspuns:"Dan Petrescu", indicii:["Fundas dreapta ofensiv, activ in special in anii '90.","A jucat in Romania si in Premier League, una dintre cele mai puternice ligi din lume.","A strans peste 90 de selectii la echipa nationala a Romaniei, participand la Mondiale si Europene.","Este cunoscut pentru perioada de succes la Chelsea, unde a devenit titular si favorit al fanilor.","La Cupa Mondiala 1994 a marcat golul victoriei Romaniei contra Statelor Unite in faza grupelor.","Dupa retragere, a devenit antrenor de succes in Liga 1, castigand titluri cu CFR Cluj."]},
+  {id:5, raspuns:"Marius Lacatus", indicii:["Atacant si extrema ofensiva, emblematic pentru anii '80-'90.","A evoluat in principal in Romania si Italia, cu aparitii si in Spania.","A castigat numeroase titluri de campion al Romaniei si a fost unul dintre cei mai prolifici jucatori ai clubului sau de suflet.","Este asociat in special cu Steaua Bucuresti, unde a devenit o legenda a clubului.","A jucat un rol important in parcursul Stelei catre finalele europene din anii '80, inclusiv in campania cu trofeul Cupei Campionilor.","Este recunoscut pentru stilul combativ si porecla Fiara, fiind un simbol al spiritului de lupta al Stelei si al Generatiei de Aur."]}
+];
+
+// ── HELPERS ──
+function normalize(str) {
+  return str.toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[^a-z0-9 ]/g,"")
+    .replace(/\s+/g," ").trim();
+}
+function dayOfYear(d) {
+  var start = new Date(d.getFullYear(),0,0);
+  return Math.floor((d - start) / 86400000);
+}
+function getTodayKey() {
+  var d = new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+function formatDate(d) {
+  var zile=["Duminica","Luni","Marti","Miercuri","Joi","Vineri","Sambata"];
+  var luni=["ianuarie","februarie","martie","aprilie","mai","iunie","iulie","august","septembrie","octombrie","noiembrie","decembrie"];
+  return zile[d.getDay()]+", "+d.getDate()+" "+luni[d.getMonth()]+" "+d.getFullYear();
+}
+function buildEmojiGrid() {
+  var grid="";
+  for(var i=0;i<MAX_CLUES;i++){
+    if(i<guesses.length) grid+=(guesses[i]==="correct")?"\uD83D\uDFE9":"\uD83D\uDFE5";
+    else grid+="\u2B1C";
+  }
+  return grid;
+}
+
+// ── STATE ──
+var today = new Date();
+var todayKey = getTodayKey();
+var puzzleIndex = dayOfYear(today) % jucatori.length;
+var currentPlayer = jucatori[puzzleIndex];
+var puzzleId = currentPlayer.id;
+var MAX_CLUES = currentPlayer.indicii.length;
+var guesses = [];
+var currentClue = 0;
+var gameOver = false;
+var won = false;
+var streak = 0;
+
+// ── FUNCTIONS ──
+function revealClue(idx) {
+  var container = document.getElementById("clues-container");
+  var card = document.createElement("div");
+  card.className = "clue-card";
+  var numSpan = document.createElement("span");
+  numSpan.className = "clue-num";
+  numSpan.textContent = idx+1;
+  var txtSpan = document.createElement("span");
+  txtSpan.className = "clue-text";
+  txtSpan.textContent = currentPlayer.indicii[idx];
+  card.appendChild(numSpan);
+  card.appendChild(txtSpan);
+  container.appendChild(card);
+  currentClue = idx;
+}
+
+function renderDots() {
+  var el = document.getElementById("progress-dots");
+  el.innerHTML = "";
+  for(var i=0;i<MAX_CLUES;i++){
+    var dot = document.createElement("div");
+    dot.className = "dot";
+    if(i<guesses.length) dot.classList.add(guesses[i]);
+    else if(i===guesses.length && !gameOver) dot.classList.add("current");
+    el.appendChild(dot);
+  }
+}
+
+function showFeedback(type, msg) {
+  var el = document.getElementById("feedback");
+  el.className = type;
+  el.textContent = msg;
+  el.style.display = "block";
+  el.style.animation = "none";
+  void el.offsetWidth;
+  el.style.animation = "fadeIn .25s ease";
+}
+
+function flashScreen(cls) {
+  var f = document.getElementById("flash");
+  f.className = cls+" active";
+  setTimeout(function(){ f.className = cls; }, 350);
+}
+
+function showGameOver() {
+  document.getElementById("input-area").style.display = "none";
+  document.getElementById("feedback").style.display = "none";
+  var go = document.getElementById("game-over");
+  go.style.display = "block";
+  var title = document.getElementById("go-title");
+  var body = document.getElementById("go-body");
+  if(won){
+    go.className = "won";
+    title.className = "game-over-title won-text";
+    title.textContent = "\uD83C\uDFC6 Felicitari!";
+    body.innerHTML = "Ai ghicit: <span class=\"answer-name\">"+currentPlayer.raspuns+"</span> din indiciul "+guesses.length+"!";
+  } else {
+    go.className = "lost";
+    title.className = "game-over-title lost-text";
+    title.textContent = "\uD83D\uDE14 Neghicit";
+    body.innerHTML = "Raspunsul corect era: <span class=\"answer-name\">"+currentPlayer.raspuns+"</span>";
+  }
+  document.getElementById("go-emojis").textContent = buildEmojiGrid();
+  startCountdown(["countdown2"]);
+}
+
+function saveState() {
+  var state = {guesses:guesses, won:won, puzzleId:puzzleId, answer:currentPlayer.raspuns, cluesRevealed:currentClue+1};
+  try{ localStorage.setItem("ghiceste_"+todayKey, JSON.stringify(state)); }catch(e){}
+}
+
+function updateStreak(didWin) {
+  if(!didWin){ streak=0; try{localStorage.setItem("ghiceste_streak",JSON.stringify({streak:0,lastWonDate:""}));}catch(e){} document.getElementById("streak-val").textContent=0; return; }
+  var yesterday = new Date(today); yesterday.setDate(yesterday.getDate()-1);
+  var yk = yesterday.getFullYear()+"-"+String(yesterday.getMonth()+1).padStart(2,"0")+"-"+String(yesterday.getDate()).padStart(2,"0");
+  var raw = null; try{raw=JSON.parse(localStorage.getItem("ghiceste_streak"));}catch(e){}
+  if(raw && (raw.lastWonDate===yk || raw.lastWonDate===todayKey)){
+    streak = (raw.lastWonDate===todayKey) ? raw.streak : raw.streak+1;
+  } else { streak=1; }
+  try{localStorage.setItem("ghiceste_streak",JSON.stringify({streak:streak,lastWonDate:todayKey}));}catch(e){}
+  document.getElementById("streak-val").textContent = streak;
+}
+
+function doConfetti() {
+  var colors=["#1a5c1a","#c9a227","#3a8a3a","#ffffff","#2d6a2d","#f0c040"];
+  for(var i=0;i<60;i++){
+    (function(delay){
+      setTimeout(function(){
+        var c=document.createElement("div"); c.className="confetti-piece";
+        c.style.left=(Math.random()*100)+"vw";
+        c.style.background=colors[Math.floor(Math.random()*colors.length)];
+        c.style.width=(Math.random()*8+6)+"px"; c.style.height=(Math.random()*8+6)+"px";
+        c.style.borderRadius=Math.random()>.5?"50%":"2px";
+        c.style.animationDuration=(Math.random()*2+1.5)+"s";
+        document.body.appendChild(c);
+        setTimeout(function(){c.remove();},4000);
+      },delay);
+    })(i*30);
+  }
+}
+
+function startCountdown(ids) {
+  function tick(){
+    var now=new Date(); var midnight=new Date(now); midnight.setHours(24,0,0,0);
+    var diff=midnight-now;
+    var h=String(Math.floor(diff/3600000)).padStart(2,"0");
+    var m=String(Math.floor((diff%3600000)/60000)).padStart(2,"0");
+    var s=String(Math.floor((diff%60000)/1000)).padStart(2,"0");
+    ids.forEach(function(id){ var el=document.getElementById(id); if(el) el.textContent=h+":"+m+":"+s; });
+  }
+  tick(); setInterval(tick,1000);
+}
+
+function copyResult(fromAP) {
+  var grid = buildEmojiGrid();
+  var line3 = won
+    ? grid+" — Ghicit din indiciul "+guesses.length+" / "+MAX_CLUES
+    : grid+" — Neghicit";
+  var text = "\u26BD GhicescFotbalistul.ro\nPuzzle #"+puzzleId+"\n"+line3;
+  var btnId = fromAP ? "copy-btn-ap" : "copy-btn";
+  var btn = document.getElementById(btnId);
+  function markCopied(){ btn.textContent="\u2705 COPIAT!"; btn.classList.add("copied"); setTimeout(function(){ btn.textContent="\uD83D\uDCCB COPIAZA REZULTATUL"; btn.classList.remove("copied"); },2000); }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(markCopied).catch(function(){ fallbackCopy(text); markCopied(); });
+  } else { fallbackCopy(text); markCopied(); }
+}
+function fallbackCopy(text){
+  var ta=document.createElement("textarea"); ta.value=text; ta.style.position="fixed"; ta.style.opacity="0";
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try{document.execCommand("copy");}catch(e){}
+  document.body.removeChild(ta);
+}
+
+function showAlreadyPlayed(s) {
+  guesses = s.guesses||[]; won = s.won||false; gameOver = true;
+  document.getElementById("game-area").style.display="none";
+  document.getElementById("already-played").style.display="block";
+  document.getElementById("ap-emojis").textContent = buildEmojiGrid();
+  document.getElementById("ap-summary").textContent = s.won
+    ? "Ai ghicit: "+s.answer+" (din indiciul "+s.guesses.length+")"
+    : "Raspuns: "+s.answer+" — Neghicit";
+  startCountdown(["countdown"]);
+}
+
+function submitGuess() {
+  if(gameOver) return;
+  var input = document.getElementById("guess-input");
+  var val = input.value.trim();
+  if(!val) return;
+  var isCorrect = normalize(val) === normalize(currentPlayer.raspuns);
+  if(isCorrect){
+    guesses.push("correct"); won=true; gameOver=true;
+    renderDots();
+    showFeedback("correct","\u2705 Corect! Ai ghicit din indiciul "+(currentClue+1)+".");
+    flashScreen("correct-flash");
+    setTimeout(showGameOver, 600);
+    setTimeout(doConfetti, 500);
+    saveState(); updateStreak(true);
+  } else {
+    guesses.push("wrong");
+    showFeedback("wrong","\u274C Gresit! Mai incearca.");
+    flashScreen("wrong-flash");
+    renderDots();
+    var nextClue = currentClue+1;
+    if(nextClue < MAX_CLUES){
+      setTimeout(function(){ revealClue(nextClue); renderDots(); }, 400);
+    } else {
+      gameOver=true; won=false;
+      setTimeout(showGameOver, 600);
+      saveState(); updateStreak(false);
+    }
+  }
+  input.value=""; input.focus();
+}
+
+// ── INIT ──
+function init() {
+  document.getElementById("date-label").textContent = formatDate(today);
+  document.getElementById("puzzle-num-label").textContent = "Puzzle #"+puzzleId;
+
+  // Load streak
+  try{
+    var s=JSON.parse(localStorage.getItem("ghiceste_streak")||"null");
+    if(s){ var yesterday=new Date(today); yesterday.setDate(yesterday.getDate()-1);
+      var yk=yesterday.getFullYear()+"-"+String(yesterday.getMonth()+1).padStart(2,"0")+"-"+String(yesterday.getDate()).padStart(2,"0");
+      streak=(s.lastWonDate===todayKey||s.lastWonDate===yk)?s.streak:0; }
+  }catch(e){}
+  document.getElementById("streak-val").textContent = streak;
+
+  // Wire up button and Enter key
+  document.getElementById("guess-btn").addEventListener("click", submitGuess);
+  document.getElementById("guess-input").addEventListener("keydown", function(e){ if(e.key==="Enter") submitGuess(); });
+  document.getElementById("copy-btn").addEventListener("click", function(){ copyResult(false); });
+  document.getElementById("copy-btn-ap").addEventListener("click", function(){ copyResult(true); });
+
+  // Check if already played today
+  var saved = null;
+  try{ var raw=localStorage.getItem("ghiceste_"+todayKey); if(raw) saved=JSON.parse(raw); }catch(e){}
+
+  if(saved){
+    showAlreadyPlayed(saved);
+  } else {
+    revealClue(0);
+    renderDots();
+  }
+}
+
+window.addEventListener("DOMContentLoaded", init);
+</script>
+</body>
+</html>
