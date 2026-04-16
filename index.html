@@ -224,7 +224,8 @@ function buildEmojiGrid() {
 // ── STATE ──
 var today = new Date();
 var todayKey = getTodayKey();
-var puzzleIndex = dayOfYear(today) % jucatori.length;
+var epochStart = new Date(2026, 3, 16); // 16 aprilie 2026 = Puzzle #1 (Hagi)
+var puzzleIndex = Math.floor((today - epochStart) / 86400000) % jucatori.length;
 var currentPlayer = jucatori[puzzleIndex];
 var puzzleId = currentPlayer.id;
 var MAX_CLUES = currentPlayer.indicii.length;
